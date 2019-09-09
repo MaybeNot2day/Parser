@@ -1,0 +1,67 @@
+from selenium import webdriver
+from bs4 import BeautifulSoup
+from selenium.webdriver.support.ui import WebDriverWait
+from urllib.request import urlopen, Request
+import urllib.parse
+import urllib
+import time
+import json
+from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import StaleElementReferenceException
+
+
+option = webdriver.ChromeOptions()
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument("--incognito")
+chrome_options.add_argument('--disable-popup-blocking')
+chrome_options.add_argument('--ignore-certificate-errors')
+chrome_options.add_argument('--dns-prefetch-disable')
+driver = webdriver.Chrome('/Users/david/PycharmProjects/Test_task/chromedriver', options=option)
+url = 'https://www.investing.com/crypto/currency-pairs?c2=12&exchange=1037'
+req = Request('https://www.investing.com/crypto/currency-pairs?c2=12&exchange=1037', headers={'User-Agent': 'Mozilla/5.0'})
+driver.get(url)
+time.sleep(10)
+urllib.parse.quote(':')
+web_byte = urlopen(req).read()
+webpage = web_byte.decode('utf-8')
+expected_conditions = (TimeoutException, StaleElementReferenceException)
+
+
+urls = []
+coins = driver.find_elements_by_partial_link_text('Index')
+for a in coins:
+    i = a.get_attribute('href')
+    urls.append(i)
+    print(i)
+
+
+time.sleep(10)
+wait = WebDriverWait(driver, 50)
+
+
+for url in urls:
+    driver.get(url)
+    soup_parser = BeautifulSoup(webpage, features='lxml')
+    name = driver.find_element_by_css_selector('#leftColumn > div.instrumentHead > h1').text.strip()
+    price = driver.find_element_by_css_selector('#last_last').text.strip()
+    volume = driver.find_element_by_css_selector('#quotes_summary_secondary_data > div > ul > li:nth-child(1) > span:nth-child(2)').text.strip()
+    open_cost = driver.find_element_by_css_selector('#quotes_summary_secondary_data > div > ul > li:nth-child(2) > span:nth-child(2)').text.strip()
+    data = {'name': name,
+            'price': price,
+            'volume': volume,
+            'open_cost': open_cost}
+    print(data)
+
+
+def write_json():
+    with open('investing.json', 'a', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+        print(data['name'], data['price'], data['volume'], data['open'])
+
+
+def main():
+    driver.quit()
+
+
+if __name__ == '__main__':
+    main()
